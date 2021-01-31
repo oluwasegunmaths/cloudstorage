@@ -43,9 +43,8 @@ public class SignUpTest {
         baseURL = baseURL = "http://localhost:" + port;
     }
     @Test
-    public void userAttemptsToAccessHomePageRedirectedToLogin() throws InterruptedException {
+    public void userAttemptsToAccessHomePageRedirectedToLogin()  {
         driver.get(baseURL + "/home");
-        Thread.sleep(3000);
         assertNotEquals("Home", driver.getTitle());
     }
 
@@ -65,11 +64,10 @@ public class SignUpTest {
         LoginPage loginPage = new LoginPage(driver);
         loginPage.login(username, password);
         assertEquals("Home", driver.getTitle());
+        driver.get(baseURL + "/home");
 
         HomePage homePage = new HomePage(driver);
         homePage.logout();
-
-
         assertNotEquals("Home", driver.getTitle());
     }
 }

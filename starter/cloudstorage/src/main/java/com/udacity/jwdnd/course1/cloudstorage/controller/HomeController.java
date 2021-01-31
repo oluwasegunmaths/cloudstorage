@@ -6,6 +6,7 @@ import com.udacity.jwdnd.course1.cloudstorage.model.Note;
 import com.udacity.jwdnd.course1.cloudstorage.services.CredentialService;
 import com.udacity.jwdnd.course1.cloudstorage.services.FileService;
 import com.udacity.jwdnd.course1.cloudstorage.services.NoteService;
+import org.apache.tomcat.util.http.fileupload.impl.SizeLimitExceededException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.Nullable;
@@ -13,6 +14,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 import org.springframework.web.servlet.ModelAndView;
@@ -90,9 +92,8 @@ public class HomeController implements HandlerExceptionResolver {
                 model.addAttribute("errormessage", "Action could not be completed due to "+e.getMessage());
                 model.addAttribute("error", true);             }
         }else if (!file.isEmpty()){
-            System.out.println("file sie is " +file.getSize());
-
             if (file.getSize()<128000l) {
+
                 if (fileService.isFilenameAvailable(file.getOriginalFilename())) {
                     byte[] bytes= new byte[0];
                     try {
@@ -110,12 +111,14 @@ public class HomeController implements HandlerExceptionResolver {
 
                 }
             } else {
-                System.out.println("file sie is " +file.getSize());
-
                 model.addAttribute("errormessage", "File shouldn't be larger than 128 kilobytes");
                 model.addAttribute("error", true);
             }
         }else {
+
+            model.addAttribute("files", this.fileService.getFiles(getUserId(userName)));
+            model.addAttribute("notes", this.noteService.getNotes(getUserId(userName)));
+            model.addAttribute("credentials", this.credentialService.getCredentials(getUserId(userName)));
             return "home";
         }
         return "result";
@@ -144,8 +147,15 @@ public class HomeController implements HandlerExceptionResolver {
     @Override
     public ModelAndView resolveException(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, Object o, Exception e) {
         Map<String, Object> model = new HashMap<String, Object>();
-            model.put("error", "Unexpected error: " + e.getMessage());
-        return new ModelAndView("homepage", model);
+        System.out.println(e.getClass().getName());
+        if(e instanceof MaxUploadSizeExceededException){
+            model.put("errormessage", "File size must be lesser than 128kb");
+
+        }else {
+            model.put("errormessage", "Unexpected error: " + e.getLocalizedMessage() );
+        }
+        model.put("error", true);
+        return new ModelAndView("result", model);
     }
 }
 
